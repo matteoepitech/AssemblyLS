@@ -1,5 +1,5 @@
 NAME    := ls
-SRC     := $(wildcard src/*.s)
+SRC     := $(wildcard src/*.s) $(wildcard src/utils/*.s)
 OBJ_DIR := obj
 OBJ     := $(SRC:src/%.s=$(OBJ_DIR)/%.o)
 NASM    := nasm
@@ -12,19 +12,21 @@ all: $(OBJ_DIR) $(NAME)
 $(NAME): $(OBJ)
 	$(LD) $(LDFLAGS) $(OBJ)
 
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
-
 $(OBJ_DIR)/%.o: src/%.s
+	@mkdir -p $(dir $@)
 	$(NASM) $(NASMFLAGS) -o $@ $<
 
 clean:
-	rm -f $(OBJ_DIR)/*.o
-	rmdir $(OBJ_DIR) 2>/dev/null || true
+	rm -rf $(OBJ_DIR)
 
 fclean: clean
 	rm -f $(NAME)
 
 re: fclean all
 
-.PHONY: all clean fclean re $(OBJ_DIR)
+debug:
+	@echo "SRC: $(SRC)"
+	@echo "OBJ: $(OBJ)"
+
+.PHONY: all clean fclean re debug
+
