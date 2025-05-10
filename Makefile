@@ -7,7 +7,7 @@ NASMFLAGS := -f elf64
 LD      := ld
 LDFLAGS := -o $(NAME)
 
-all: $(OBJ_DIR) $(NAME)
+all: $(NAME)
 
 $(NAME): $(OBJ)
 	$(LD) $(LDFLAGS) $(OBJ)
@@ -29,4 +29,3 @@ debug:
 	@echo "OBJ: $(OBJ)"
 
 .PHONY: all clean fclean re debug
-

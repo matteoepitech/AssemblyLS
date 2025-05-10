@@ -16,4 +16,17 @@ section .text
 ;   rax - int
 ; ----------------------------------------
 strlen:
+    xor rcx, rcx
+    jmp .LOOP_STRLEN
+
+.LOOP_STRLEN:
+    movzx rax, byte [rdi]
+    test rax, rax
+    jz .LOOP_DONE
+    inc rcx
+    inc rdi
+    jmp .LOOP_STRLEN
+
+.LOOP_DONE:
+    mov rax, rcx
     ret

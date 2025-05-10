@@ -13,3 +13,14 @@
 %define AT_FDCWD -100
 
 %define FAIL_SYS -1
+
+; --------------------------
+; struct linux direct offset
+; --------------------------
+%define D_INO 0
+%define D_OFF (D_INO + 8)
+%define D_RECLEN (D_OFF + 8)
+%define D_TYPE (D_RECLEN + 2)
+%define D_NAME (D_TYPE + 1)
+
+%define ASCII_DOT 46

@@ -4,11 +4,13 @@
 ; Dir functions utils
     extern opendir
     extern readdir
+    extern strlen
 
 ; ------------------ RODATA ------------------
 section .rodata
 
     current_path: db ".", 0x00
+    new_line: db 0x0a, 0x00
 
     finished_read: db 0x0a, "LS just finished to read the directory.", 0x0a, 0x00
     finished_read_len equ $-finished_read - 1
@@ -37,14 +39,12 @@ _start:
 QUIT_PROGRAM:
     mov rax, SYS_EXIT
     xor rdi, rdi
-    leave
     syscall
 
 ; Quit program with exit 1
 QUIT_PROGRAM_FAIL:
     mov rax, SYS_EXIT
     mov rdi, 1
-    leave
     syscall
 
 ; ----------------------------------------
@@ -81,7 +81,11 @@ read_current_dir:
     test rax, rax
     jz QUIT_PROGRAM_FAIL
 
-    jmp .READ_FINISHED
+    ; Print the content of the directory, a file by line
+    lea rdi, [rbp - 4096]
+    call print_dir_content
+
+    jmp QUIT_PROGRAM
 
 .READ_FAILED:
     mov rax, SYS_WRITE
@@ -89,15 +93,74 @@ read_current_dir:
     mov rsi, readdir_fail
     mov rdx, readdir_fail_len
     syscall
-    ; Jump to exit the program with fail
     jmp QUIT_PROGRAM_FAIL
 
 .READ_FINISHED:
-    ; Say we just finished the readding of the directory
     mov rax, SYS_WRITE
     mov rdi, STDOUT
     mov rsi, finished_read
     mov rdx, finished_read_len
     syscall
-    ; Jump to exit the program
     jmp QUIT_PROGRAM
+
+; ----------------------------------------
+; int print_dir_content(struct linux_dirent64 *dirp)
+;
+; Parameters:
+;   rdi - struct linux_dirent64 *dirp
+;
+; Returns:
+;   rax - int
+; ----------------------------------------
+print_dir_content:
+    push rbp
+    mov rbp, rsp
+
+    ; Store the buffer into r8 and start printing
+    mov r8, rdi
+    lea r9, [rdi + 4096]
+
+.LOOP_PRINT_DIR_CONTENT:
+
+    ; Did we hit the end of the buffer
+    cmp r8, r9
+    jge .LOOP_DONE_PRINT_DIR_CONTENT
+    ; There is no more information or still
+    mov rdx, qword [r8]
+    test rdx, rdx
+    jz .LOOP_DONE_PRINT_DIR_CONTENT
+
+    ; Get the length of the string d_name and put it on RDX
+    lea rdi, [r8 + D_NAME]
+    call strlen
+    mov rdx, rax
+
+    movzx rax, byte [r8 + D_NAME]
+    cmp rax, ASCII_DOT
+    je .LOOP_NEXT_FILE
+    jmp .PRINT_FILE
+
+.PRINT_FILE:
+    ; Print the file
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    lea rsi, [r8 + D_NAME]
+    syscall
+
+    ; Print newline
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, new_line
+    mov rdx, 2
+    syscall
+    jmp .LOOP_NEXT_FILE
+
+.LOOP_NEXT_FILE:
+    movzx rcx, word [r8 + D_RECLEN]
+    add r8, rcx
+
+    jmp .LOOP_PRINT_DIR_CONTENT
+
+.LOOP_DONE_PRINT_DIR_CONTENT:
+    leave
+    ret
