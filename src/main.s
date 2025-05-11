@@ -18,6 +18,10 @@ section .rodata
     readdir_fail: db "readdir: Failed.", 0x0a, 0x00
     readdir_fail_len equ $-readdir_fail - 1
 
+; ------------------- DATA -------------------
+section .data
+    option_flags: db 0x00
+
 ; ------------------- TEXT -------------------
 section .text
 
@@ -30,6 +34,12 @@ _start:
     push rbp
     mov rbp, rsp
 
+    mov rdi, [rbp + 8]		; ARGC
+    lea rsi, [rbp + 16]		; ARGV
+    ; Calling the parse options function
+    call parse_options
+
+    ; Calling the read to the current directory
     call read_current_dir
 
     ; Finished LS
@@ -47,6 +57,52 @@ QUIT_PROGRAM_FAIL:
     mov rdi, 1
     syscall
 
+
+
+
+
+; ----------------------------------------
+; void parse_options(int argc, char **argv)
+;
+; Parameters:
+;   rdi - int argc
+;   rsi - char **argv
+;
+; ----------------------------------------
+parse_options:
+    push rbp
+    mov rbp, rsp
+
+    mov r15, rdi		; ARGC
+    mov r14, [rsi]		; ARGV[0]
+    
+    xor rcx, rcx
+    
+    jmp .PARSE_SINGLE_OPTION
+
+.PARSE_SINGLE_OPTION:
+    cmp byte [r14], ASCII_DASH
+    jne .PARSE_GO_NEXT
+    cmp byte [r14 + 1], ASCII_A
+    jne .PARSE_GO_NEXT
+    or byte [option_flags], A_OPTION
+    jmp .PARSE_END
+
+.PARSE_GO_NEXT:
+    inc rcx
+    add rsi, 8			; Add 8 bytes ( pointer size )
+    mov r14, [rsi]
+    cmp rcx, r15
+    je .PARSE_END
+    jmp .PARSE_SINGLE_OPTION
+
+.PARSE_END:
+    leave
+    ret
+
+
+
+
 ; ----------------------------------------
 ; int read_current_dir(void)
 ;
@@ -54,14 +110,13 @@ QUIT_PROGRAM_FAIL:
 ;   rax - int
 ; ----------------------------------------
 read_current_dir:
-
     ; Prologue of function
     push rbp
     mov rbp, rsp
 
-    sub rsp, 4096   ; Variable buffer
+    sub rsp, 4096		; Variable buffer
 
-    ; Calling an opendir
+    ; Calling an opendir function
     lea rdi, [rel current_path]
     call opendir
 
@@ -103,6 +158,10 @@ read_current_dir:
     syscall
     jmp QUIT_PROGRAM
 
+
+
+
+
 ; ----------------------------------------
 ; int print_dir_content(struct linux_dirent64 *dirp)
 ;
@@ -121,7 +180,6 @@ print_dir_content:
     lea r9, [rdi + 4096]
 
 .LOOP_PRINT_DIR_CONTENT:
-
     ; Did we hit the end of the buffer
     cmp r8, r9
     jge .LOOP_DONE_PRINT_DIR_CONTENT
@@ -137,8 +195,10 @@ print_dir_content:
 
     movzx rax, byte [r8 + D_NAME]
     cmp rax, ASCII_DOT
-    je .LOOP_NEXT_FILE
-    jmp .PRINT_FILE
+    jne .PRINT_FILE
+    test byte [option_flags], A_OPTION
+    jnz .PRINT_FILE
+    jmp .LOOP_NEXT_FILE
 
 .PRINT_FILE:
     ; Print the file
@@ -151,7 +211,7 @@ print_dir_content:
     mov rax, SYS_WRITE
     mov rdi, STDOUT
     mov rsi, new_line
-    mov rdx, 2
+    mov rdx, 1
     syscall
     jmp .LOOP_NEXT_FILE
 
