@@ -24,3 +24,8 @@
 %define D_NAME (D_TYPE + 1)
 
 %define ASCII_DOT 46
+%define ASCII_DASH 45
+%define ASCII_A 97
+
+%define NO_OPTION 00000000b
+%define A_OPTION 00000001b
