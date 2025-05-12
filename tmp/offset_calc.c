@@ -8,7 +8,8 @@ int main()
     printf("Offset of st_ino: %zu\n", offsetof(struct stat, st_ino));
     printf("Offset of st_nlink: %zu\n", offsetof(struct stat, st_nlink));
     printf("Offset of st_mode: %zu\n", offsetof(struct stat, st_mode));
-    printf("Size st_mode : %zu octets\n", sizeof(((struct stat *)0)->st_mode));
+    printf("Size st_mode : %zu bytes\n", sizeof(((struct stat *)0)->st_mode));
+    printf("Size st_nlink : %zu bytes\n", sizeof(((struct stat *)0)->st_nlink));
     return 0;
 }
 

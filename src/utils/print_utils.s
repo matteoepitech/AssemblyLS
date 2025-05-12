@@ -62,13 +62,6 @@ put_nmbr:
     jmp .PRINT_DIGIT
 
 .PRINT_DONE:
-    mov al, 10
-    mov [rsp], al
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    lea rsi, [rsp]
-    mov rdx, 1
-    syscall
     pop rax
     pop rdx
     pop rsi

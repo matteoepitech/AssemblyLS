@@ -40,6 +40,7 @@
 %define ASCII_DASH 45
 %define ASCII_A 97
 %define ASCII_L 108
+%define ASCII_D 100
 
 %define NO_OPTION 00000000b
 %define A_OPTION  00000001b

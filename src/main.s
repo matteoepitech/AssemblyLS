@@ -15,6 +15,7 @@ section .rodata
     current_path: db ".", 0x00
     new_line: db 0x0a, 0x00
     new_space: db 0x20, 0x20, 0x00
+    tmp_rights: db "---------", 0x00
 
     finished_read: db 0x0a, "LS just finished to read the directory.", 0x0a, 0x00
     finished_read_len equ $-finished_read - 1
@@ -233,39 +234,39 @@ print_dir_content:
 
     cmp rax, 0
     jl .PRINT_FILE_NAME
-    xor rax, rax
+    jmp .PRINT_FILE
+
+.PRINT_FILE_INFORMATIONS:
+    call print_file_informations
+    jmp .PRINT_FILE_NAME_COLORS
+
+.PRINT_FILE:
+    test byte [option_flags], L_OPTION
+    jnz .PRINT_FILE_INFORMATIONS
+    jmp .PRINT_FILE_NAME_COLORS
+
+.PRINT_DIR_COLOR:
+    call write_blue
+    jmp .PRINT_FILE_NAME
+    
+.PRINT_REGFILE_COLOR:
+    call reset_color
+    jmp .PRINT_FILE_NAME
+
+.PRINT_FILE_NAME_COLORS:
     mov eax, dword [stat_buffer + ST_MODE]
     and eax, S_IFMT
- 
     cmp rax, S_IFDIR
-    je .PRINT_DIR
-    jmp .PRINT_REGFILE
-    
-.PRINT_DIR:
-    call write_blue
-    test byte [option_flags], L_OPTION
-    jnz .PRINT_DIR_L
-    jmp .PRINT_FILE_NAME
-    
-.PRINT_REGFILE:
-    call reset_color
-    test byte [option_flags], L_OPTION
-    jnz .PRINT_REGFILE_L
-    jmp .PRINT_FILE_NAME
-
-.PRINT_DIR_L:
-    jmp .PRINT_FILE_NAME
-
-.PRINT_REGFILE_L:
-    jmp .PRINT_FILE_NAME
+    je .PRINT_DIR_COLOR
+    jmp .PRINT_REGFILE_COLOR
 
 .PRINT_FILE_NAME:
-    ; Print the file
     mov rax, SYS_WRITE
     mov rdi, STDOUT
     lea rsi, [r8 + D_NAME]
     mov rdi, rdi
     syscall
+    call reset_color
     jmp .LOOP_NEXT_FILE
 
 
@@ -312,11 +313,87 @@ print_dir_content:
     jmp .PRINT_NEW_SPACE_FILE
 
 .LOOP_DONE_PRINT_DIR_CONTENT:
-    call reset_color
     mov rax, SYS_WRITE
     mov rdi, STDOUT
     mov rsi, new_line
     mov rdx, 1
     syscall
+    leave
+    ret
+
+
+
+
+
+; ----------------------------------------
+; void print_file_informations(void)
+; ----------------------------------------
+print_file_informations:
+    push rbp
+    mov rbp, rsp
+    push rax
+    push rdi
+    push rsi
+    push rdx
+    
+    mov eax, dword [stat_buffer + ST_MODE]
+    and eax, S_IFMT
+ 
+    cmp rax, S_IFDIR
+    je .FILE_TYPE_D
+    jmp .FILE_TYPE_REG
+
+.FILE_TYPE_D:
+    push rax
+    mov byte [rsp], ASCII_D
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, rsp
+    mov rdx, 1
+    syscall
+    pop rax
+    jmp .PRINT_RIGHTS
+
+.FILE_TYPE_REG:
+    push rax
+    mov byte [rsp], ASCII_DASH
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, rsp
+    mov rdx, 1
+    syscall
+    pop rax
+    jmp .PRINT_RIGHTS
+
+.PRINT_RIGHTS:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, tmp_rights
+    mov rdx, 9
+    syscall
+    jmp .PRINT_SPACE_AFTER_RIGHTS
+
+.PRINT_SPACE_AFTER_RIGHTS:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, new_space
+    mov rdx, 1
+    syscall
+
+.PRINT_NBLINKS:
+    mov rdi, qword [stat_buffer + ST_NLINK]
+    call put_nmbr
+
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, new_space
+    mov rdx, 1
+    syscall
+
+.PRINT_FILE_INFORMATIONS_DONE:
+    pop rdx
+    pop rsi
+    pop rdi
+    pop rax
     leave
     ret
