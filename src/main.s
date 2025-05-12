@@ -5,12 +5,15 @@
     extern opendir
     extern readdir
     extern strlen
+    extern write_blue
+    extern reset_color
 
 ; ------------------ RODATA ------------------
 section .rodata
 
     current_path: db ".", 0x00
     new_line: db 0x0a, 0x00
+    new_space: db 0x20, 0x20, 0x00
 
     finished_read: db 0x0a, "LS just finished to read the directory.", 0x0a, 0x00
     finished_read_len equ $-finished_read - 1
@@ -21,6 +24,10 @@ section .rodata
 ; ------------------- DATA -------------------
 section .data
     option_flags: db 0x00
+
+; ------------------- BSS --------------------
+section .bss
+    stat_buffer: resb 144
 
 ; ------------------- TEXT -------------------
 section .text
@@ -84,9 +91,18 @@ parse_options:
     cmp byte [r14], ASCII_DASH
     jne .PARSE_GO_NEXT
     cmp byte [r14 + 1], ASCII_A
-    jne .PARSE_GO_NEXT
+    je .PARSE_A
+    cmp byte [r14 + 1], ASCII_L
+    je .PARSE_L
+    jmp .PARSE_GO_NEXT
+
+.PARSE_A:
     or byte [option_flags], A_OPTION
-    jmp .PARSE_END
+    jmp .PARSE_GO_NEXT
+
+.PARSE_L:
+    or byte [option_flags], L_OPTION
+    jmp .PARSE_GO_NEXT
 
 .PARSE_GO_NEXT:
     inc rcx
@@ -198,32 +214,104 @@ print_dir_content:
 
     movzx rax, byte [r8 + D_NAME]
     cmp rax, ASCII_DOT
-    jne .PRINT_FILE
+    jne .GET_FILE_STAT
     test byte [option_flags], A_OPTION
-    jnz .PRINT_FILE
+    jnz .GET_FILE_STAT
     jmp .LOOP_NEXT_FILE
 
-.PRINT_FILE:
+.GET_FILE_STAT:
+    ; Get the file information using stat()
+    mov rax, SYS_STAT
+    lea rdi, [r8 + D_NAME]
+    lea rsi, [rel stat_buffer]
+    syscall
+
+    cmp rax, 0
+    jl .PRINT_FILE_NAME
+    xor rax, rax
+    mov eax, dword [stat_buffer + ST_MODE]
+    and eax, S_IFMT
+ 
+    cmp rax, S_IFDIR
+    je .PRINT_DIR
+    jmp .PRINT_REGFILE
+    
+.PRINT_DIR:
+    call write_blue
+    test byte [option_flags], L_OPTION
+    jnz .PRINT_DIR_L
+    jmp .PRINT_FILE_NAME
+    
+.PRINT_REGFILE:
+    call reset_color
+    test byte [option_flags], L_OPTION
+    jnz .PRINT_REGFILE_L
+    jmp .PRINT_FILE_NAME
+
+.PRINT_DIR_L:
+    jmp .PRINT_FILE_NAME
+
+.PRINT_REGFILE_L:
+    jmp .PRINT_FILE_NAME
+
+.PRINT_FILE_NAME:
     ; Print the file
     mov rax, SYS_WRITE
     mov rdi, STDOUT
     lea rsi, [r8 + D_NAME]
+    mov rdi, rdi
     syscall
+    jmp .LOOP_NEXT_FILE
 
+
+.PRINT_NEW_LINE_FILE:
     ; Print newline
     mov rax, SYS_WRITE
     mov rdi, STDOUT
     mov rsi, new_line
     mov rdx, 1
     syscall
-    jmp .LOOP_NEXT_FILE
+    jmp .LOOP_PRINT_DIR_CONTENT
+
+.PRINT_NEW_SPACE_FILE:
+    ; Print new space
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, new_space
+    mov rdx, 2
+    syscall
+    jmp .LOOP_PRINT_DIR_CONTENT
 
 .LOOP_NEXT_FILE:
     movzx rcx, word [r8 + D_RECLEN]
     add r8, rcx
 
-    jmp .LOOP_PRINT_DIR_CONTENT
+    ; Did we hit the end of the buffer
+    cmp r8, r9
+    jge .LOOP_DONE_PRINT_DIR_CONTENT
+    ; There is no more information or still
+    mov rdx, qword [r8]
+    test rdx, rdx
+    jz .LOOP_DONE_PRINT_DIR_CONTENT
+
+    movzx rax, byte [r8 + D_NAME]
+    cmp rax, ASCII_DOT
+    jne .CHOOSE_SPACE_LAYOUT
+    test byte [option_flags], A_OPTION
+    jz .LOOP_PRINT_DIR_CONTENT
+    jmp .CHOOSE_SPACE_LAYOUT
+
+.CHOOSE_SPACE_LAYOUT:
+    test byte [option_flags], L_OPTION
+    jnz .PRINT_NEW_LINE_FILE
+    jmp .PRINT_NEW_SPACE_FILE
 
 .LOOP_DONE_PRINT_DIR_CONTENT:
+    call reset_color
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, new_line
+    mov rdx, 1
+    syscall
     leave
     ret
