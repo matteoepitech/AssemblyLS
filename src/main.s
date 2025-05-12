@@ -103,6 +103,7 @@ parse_options:
 
 
 
+
 ; ----------------------------------------
 ; int read_current_dir(void)
 ;
@@ -128,16 +129,17 @@ read_current_dir:
     mov rdi, rax		; FD from opendir
     lea rsi, [rbp - 4096]	; Buffer variable
     mov rdx, 4096		; 4096 buffer length
-    call readdir
-    
-    ; Verify error when readdir (FAIL_SYS = -1, rax = 0 = Empty)
-    cmp rax, FAIL_SYS
+    call readdir    
+    mov r13, rax		; Size read
+
+    cmp rax, FAIL_SYS		; Verify error when readdir (FAIL_SYS = -1, rax = 0 = Empty)
     je QUIT_PROGRAM_FAIL
     test rax, rax
     jz QUIT_PROGRAM_FAIL
 
     ; Print the content of the directory, a file by line
     lea rdi, [rbp - 4096]
+    mov rsi, r13
     call print_dir_content
 
     jmp QUIT_PROGRAM
@@ -163,10 +165,11 @@ read_current_dir:
 
 
 ; ----------------------------------------
-; int print_dir_content(struct linux_dirent64 *dirp)
+; int print_dir_content(struct linux_dirent64 *dirp, int size_dirp)
 ;
 ; Parameters:
 ;   rdi - struct linux_dirent64 *dirp
+;   rsi - int size_dirp
 ;
 ; Returns:
 ;   rax - int
@@ -176,8 +179,8 @@ print_dir_content:
     mov rbp, rsp
 
     ; Store the buffer into r8 and start printing
-    mov r8, rdi
-    lea r9, [rdi + 4096]
+    lea r8, [rdi]
+    lea r9, [rdi + rsi]
 
 .LOOP_PRINT_DIR_CONTENT:
     ; Did we hit the end of the buffer

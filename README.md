@@ -81,7 +81,7 @@ Makefile
 README.md
 ```
 
-*(Note: This is a simplified version of `ls`. It not support flags like `-l`, `-a`, etc.)*
+*(Note: This is a simplified version of `ls`. It not support flags like `-l`, etc.)*
 
 ---
 
