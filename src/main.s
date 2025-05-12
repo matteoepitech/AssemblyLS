@@ -5,6 +5,7 @@
     extern opendir
     extern readdir
     extern strlen
+    extern put_nmbr
     extern write_blue
     extern reset_color
 
