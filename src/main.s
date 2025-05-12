@@ -24,6 +24,7 @@ section .rodata
 ; ------------------- DATA -------------------
 section .data
     option_flags: db 0x00
+    fd_opendir: dq 0
 
 ; ------------------- BSS --------------------
 section .bss
@@ -136,13 +137,15 @@ read_current_dir:
     ; Calling an opendir function
     lea rdi, [rel current_path]
     call opendir
+    mov [fd_opendir], rax
 
     ; Verify error when opendir (FAIL_SYS = -1 = Failed to open the dir)
     cmp rax, FAIL_SYS
     je .READ_FAILED
 
+.read_current_dir_buffer:
     ; Calling an readdir
-    mov rdi, rax		; FD from opendir
+    mov rdi, [fd_opendir]	; FD from opendir
     lea rsi, [rbp - 4096]	; Buffer variable
     mov rdx, 4096		; 4096 buffer length
     call readdir    
@@ -151,14 +154,15 @@ read_current_dir:
     cmp rax, FAIL_SYS		; Verify error when readdir (FAIL_SYS = -1, rax = 0 = Empty)
     je QUIT_PROGRAM_FAIL
     test rax, rax
-    jz QUIT_PROGRAM_FAIL
+    jz QUIT_PROGRAM
 
-    ; Print the content of the directory, a file by line
+    ; Print the content of the directory
     lea rdi, [rbp - 4096]
     mov rsi, r13
+    mov r12, r13
     call print_dir_content
 
-    jmp QUIT_PROGRAM
+    jmp .read_current_dir_buffer
 
 .READ_FAILED:
     mov rax, SYS_WRITE
