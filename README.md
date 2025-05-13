@@ -1,7 +1,6 @@
 # 🧠 AssemblyLS — Minimal `ls` in pure x86\_64 ASM
 
 > A minimal, reimplementation of `ls`, written in raw Intel ASM without the libc.
-> This project use NASM as assembler
 
 <p align="center">
   <img src="tmp/demo.gif" alt="AssemblyLS demo" />
@@ -21,9 +20,8 @@ make re     # rebuild from scratch
 ## Tech used
 
 * x86\_64 Assembly (Intel syntax)
+* NASM (Netwide Assembler)
 * No libc / No GCC
-* Only Linux syscalls (`getdents64`, `write`, `exit`, etc...)
-* Fully manual linking (`nasm` + `ld`)
 
 ## What is working
 - [x] Simple LS in lambda directory
