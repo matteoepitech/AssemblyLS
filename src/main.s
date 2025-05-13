@@ -53,17 +53,15 @@ _start:
     ; Calling the parse options function
     call parse_options
 
-    ;mov rax, SYS_OPEN
-    ;mov rdi, etc_passwd_path
-    ;mov rsi, 0
-    ;mov rdx, 0
-    ;syscall
+    mov rax, SYS_OPEN
+    mov rdi, etc_passwd_path
+    mov rsi, 0
+    mov rdx, 0
+    syscall
 
-    ;mov rdi, rax
-    ;call get_line
-    
-    ;mov rdi, rax
-    ;call get_line
+    mov rcx, rax
+    mov rdi, rcx
+    call get_line
 
     ; Calling the read to the current directory
     call read_current_dir

@@ -3,6 +3,7 @@
 %include "include/ls.inc"
 
     extern put_nmbr
+    extern strlen
     extern strlen_char
     extern strncpy
 
@@ -60,20 +61,25 @@ get_line:
     mov r8, rax
 
     lea rdi, [line_get_line]
+    mov rsi, 256
+    call reset_buffer
+
+    lea rdi, [line_get_line]
     lea rsi, [buffer_get_line + r11]
     mov rdx, r8
     call strncpy
-    mov r9, rax
+    mov r9, rax				; Result of the strncpy
 
+    mov rdi, r9
+    call strlen
+    mov rdx, rax
     mov rax, SYS_WRITE
     mov rdi, STDOUT
     mov rsi, r9
-    mov rdx, r8
     syscall
 
-    mov rdi, rax
-    call put_nmbr
-
+    add [stream_index_get_line], rax
+    add dword [stream_index_get_line], 1
 
 .GET_LINES_DONES:
     pop r11
@@ -85,5 +91,37 @@ get_line:
     pop rsi
     pop rdi
     pop rbx
+    leave
+    ret
+
+
+
+
+
+; ----------------------------------------
+; void reset_buffer(char *buffer, size_t size_buffer)
+;
+; Paramaters:
+;   rdi - char *buffer
+;   rsi - size_t buffer
+;
+; ----------------------------------------
+reset_buffer:
+    push rbp
+    mov rbp, rsp
+
+    xor rcx, rcx
+    cmp rcx, rsi
+    jge .RESET_BUFFER_DONE
+    jmp .RESET_BUFFER_CYCLE
+
+.RESET_BUFFER_CYCLE:
+    mov byte [rdi + rcx], 0x00
+    inc rcx
+    cmp rcx, rsi
+    jge .RESET_BUFFER_DONE
+    jmp .RESET_BUFFER_CYCLE
+
+.RESET_BUFFER_DONE:
     leave
     ret
