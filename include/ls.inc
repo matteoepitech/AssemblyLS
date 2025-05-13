@@ -1,4 +1,6 @@
+%define SYS_READ 0
 %define SYS_WRITE 1
+%define SYS_OPEN 2
 %define SYS_STAT 4
 %define SYS_EXIT 60
 %define SYS_OPENAT 257
@@ -31,6 +33,7 @@
 %define ST_INO (ST_DEV + 8)
 %define ST_NLINK (ST_INO + 8)
 %define ST_MODE (ST_NLINK + 8)
+%define ST_UID (ST_MODE + 4)
 
 %define S_IFREG 0100000o
 %define S_IFDIR 0040000o

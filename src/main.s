@@ -5,6 +5,8 @@
     extern opendir
     extern readdir
     extern strlen
+    extern strlen_char
+    extern get_line
     extern put_nmbr
     extern write_blue
     extern reset_color
@@ -22,6 +24,8 @@ section .rodata
 
     readdir_fail: db "readdir: Failed.", 0x0a, 0x00
     readdir_fail_len equ $-readdir_fail - 1
+
+    etc_passwd_path: db "/etc/passwd", 0x00
 
 ; ------------------- DATA -------------------
 section .data
@@ -48,6 +52,18 @@ _start:
     lea rsi, [rbp + 16]		; ARGV
     ; Calling the parse options function
     call parse_options
+
+    ;mov rax, SYS_OPEN
+    ;mov rdi, etc_passwd_path
+    ;mov rsi, 0
+    ;mov rdx, 0
+    ;syscall
+
+    ;mov rdi, rax
+    ;call get_line
+    
+    ;mov rdi, rax
+    ;call get_line
 
     ; Calling the read to the current directory
     call read_current_dir
