@@ -18,16 +18,12 @@ make fclean # clean everything
 make re     # rebuild from scratch
 ```
 
----
-
 ## 🧵 Tech used
 
 * 🧠 x86\_64 Assembly (Intel syntax)
 * 🚫 No libc / No GCC
 * ✅ Only Linux syscalls (`getdents64`, `write`, `exit`, etc.)
 * 🧱 Fully manual linking (`nasm` + `ld`)
-
----
 
 ## 📦 Output Example
 
