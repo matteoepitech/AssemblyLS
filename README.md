@@ -9,7 +9,7 @@
 
 ---
 
-## ⚙️ Build
+## How to build ?
 
 ```bash
 make        # build the binary
@@ -18,19 +18,21 @@ make fclean # clean everything
 make re     # rebuild from scratch
 ```
 
-## 🧵 Tech used
+## Tech used
 
-* 🧠 x86\_64 Assembly (Intel syntax)
-* 🚫 No libc / No GCC
-* ✅ Only Linux syscalls (`getdents64`, `write`, `exit`, etc.)
-* 🧱 Fully manual linking (`nasm` + `ld`)
+* x86\_64 Assembly (Intel syntax)
+* No libc / No GCC
+* Only Linux syscalls (`getdents64`, `write`, `exit`, etc...)
+* Fully manual linking (`nasm` + `ld`)
 
-## 📦 Output Example
+## What is working
+- [x] Simple LS in lambda directory
+- [x] Simple LS in big directory
+- [x] -a option
+- [ ] -l option
 
-```bash
-$ ./ls
-main.s  utils.s  Makefile  README.md
-```
+> [!WARNING]
+> This project contains a lot of bad practice since it's a beginner friendly project.
 
 ---
 
