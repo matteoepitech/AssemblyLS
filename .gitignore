@@ -1,3 +1,4 @@
 ls
 
 *.o
+tmp/demo.cast
