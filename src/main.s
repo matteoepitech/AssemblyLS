@@ -59,9 +59,9 @@ _start:
     mov rdx, 0
     syscall
 
-    mov rcx, rax
-    mov rdi, rcx
-    call get_line
+    ;mov rcx, rax
+    ;mov rdi, rcx
+    ;call get_line
 
     ; Calling the read to the current directory
     call read_current_dir

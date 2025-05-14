@@ -3,7 +3,7 @@
 > A minimal, reimplementation of `ls`, written in raw Intel ASM without the libc.
 
 <p align="center">
-  <img src="tmp/demo.gif" alt="AssemblyLS demo" />
+  <img src="tmp/demo.svg" alt="AssemblyLS demo" />
 </p>
 
 ---
