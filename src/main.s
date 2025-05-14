@@ -17,6 +17,7 @@ section .rodata
     current_path: db ".", 0x00
     new_line: db 0x0a, 0x00
     new_space: db 0x20, 0x20, 0x00
+    semicolon: db 58
     tmp_rights: db "---------", 0x00
 
     finished_read: db 0x0a, "LS just finished to read the directory.", 0x0a, 0x00
@@ -52,12 +53,6 @@ _start:
     lea rsi, [rbp + 16]		; ARGV
     ; Calling the parse options function
     call parse_options
-
-    mov rax, SYS_OPEN
-    mov rdi, etc_passwd_path
-    mov rsi, 0
-    mov rdx, 0
-    syscall
 
     ;mov rcx, rax
     ;mov rdi, rcx
@@ -404,7 +399,62 @@ print_file_informations:
     mov rdx, 1
     syscall
 
+.PRINT_UID_OWNER:
+    mov r15, 0			; The UID
+    mov rax, SYS_OPEN
+    mov rdi, etc_passwd_path
+    mov rsi, 0
+    mov rdx, 0
+    syscall
+    test rax, rax
+    js QUIT_PROGRAM_FAIL
+    mov rcx, rax
+
+.FIND_THE_LINE_UID_OWNER:
+    push rcx
+    push r8
+    push r9
+    mov rdi, rcx
+    call get_line
+
+    mov rdi, rax
+    mov r8, rdi
+    mov al, byte [semicolon]
+    movzx rsi, al
+    call strlen_char
+    mov r9, rax
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, r8
+    mov rdx, r9
+    syscall
+
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, new_space
+    mov rdx, 1
+    syscall
+    
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, r8
+    mov rdx, r9
+    syscall
+
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, new_space
+    mov rdx, 1
+    
+    syscall
+    pop r9
+    pop r8
+    pop rcx
+
 .PRINT_FILE_INFORMATIONS_DONE:
+    mov rax, 3
+    mov rdi, rcx
+    syscall
     pop rdx
     pop rsi
     pop rdi

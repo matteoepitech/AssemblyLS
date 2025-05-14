@@ -18,6 +18,7 @@ section .bss
 
 ; ------------------- DATA--------------------
 section .data
+    saved_fd: dd 0
     stream_index_get_line: dd 0
 
 ; ------------------- TEXT -------------------
@@ -48,13 +49,33 @@ get_line:
     push r10
     push r11
 
+    cmp rdi, [saved_fd]
+    jne .MODIFY_FD
+    jmp .CONTINUE_GET_LINE
+
+.MODIFY_FD:
+    mov [saved_fd], rdi
+
+.CONTINUE_GET_LINE:
+    xor rax, rax
+    xor rbx, rbx
+    xor rdx, rdx
+    xor rsi, rsi
+    xor rcx, rcx
+    xor r8, r8
+    xor r9, r9
+    xor r10, r10
+    xor r11, r11
     mov rax, SYS_READ
     mov rsi, buffer_get_line
     mov rdx, 4096
     syscall
 
     xor r11, r11
-    mov r11, [stream_index_get_line]
+    mov r11d, [stream_index_get_line]
+    cmp r11, 4096
+    jge .GET_LINES_DONES
+
     lea rdi, [buffer_get_line + r11]
     movzx rsi, byte [newline]
     call strlen_char
@@ -67,16 +88,7 @@ get_line:
     lea rdi, [line_get_line]
     lea rsi, [buffer_get_line + r11]
     mov rdx, r8
-    call strncpy
-    mov r9, rax				; Result of the strncpy
-
-    mov rdi, r9
-    call strlen
-    mov rdx, rax
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, r9
-    syscall
+    call strncpy			; Result of the get_line into rax
 
     add [stream_index_get_line], rax
     add dword [stream_index_get_line], 1

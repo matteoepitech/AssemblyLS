@@ -48,6 +48,8 @@ strlen_char:
     jmp .LOOP_STRLEN
 
 .LOOP_STRLEN:
+    test rdi, rdi
+    jz .LOOP_DONE
     movzx rax, byte [rdi]
     test rax, rax
     jz .LOOP_DONE
