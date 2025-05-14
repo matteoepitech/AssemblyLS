@@ -1,12 +1,13 @@
 ; Main file for the Assembly LS
 %include "include/ls.inc"
 
-; Dir functions utils
     extern opendir
     extern readdir
     extern strlen
     extern strlen_char
+    extern strlen_char_n
     extern get_line
+    extern print_debug
     extern put_nmbr
     extern write_blue
     extern reset_color
@@ -421,32 +422,19 @@ print_file_informations:
     mov r8, rdi
     mov al, byte [semicolon]
     movzx rsi, al
+    mov rdx, 2
+    call strlen_char_n
+
+    lea r9, [r8 + rax]
+    lea rdi, [r9]
+    mov al, byte [semicolon]
+    movzx rsi, al
     call strlen_char
-    mov r9, rax
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, r8
-    mov rdx, r9
-    syscall
 
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, new_space
-    mov rdx, 1
-    syscall
-    
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, r8
-    mov rdx, r9
-    syscall
+    mov byte [r9 + rax], 0		; R9 is currently the buffer string
+    ; TODO Create getnbr(char *string) and compare them if they are correct then we got the UID name
 
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, new_space
-    mov rdx, 1
-    
-    syscall
+.FIND_THE_LINE_GID_OWNER:
     pop r9
     pop r8
     pop rcx

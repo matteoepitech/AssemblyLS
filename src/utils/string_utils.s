@@ -6,7 +6,10 @@ section .text
 
     global strlen
     global strlen_char
+    global strlen_char_n
     global strncpy
+    global strcmp
+    global strncmp
 
 ; ----------------------------------------
 ; int strlen(const char *string)
@@ -32,6 +35,10 @@ strlen:
 .LOOP_DONE:
     mov rax, rcx
     ret
+
+
+
+
 
 ; ----------------------------------------
 ; int strlen_char(const char *string, char c)
@@ -63,6 +70,50 @@ strlen_char:
     mov rax, rcx
     ret
 
+
+
+
+
+; ----------------------------------------
+; int strlen_char_n(const char *string, char c, size_t n)
+;
+; Parameters:
+;   rdi - const char *string
+;   rsi - char c
+;   rdx - n
+;
+; Returns:
+;   rax - int
+; ----------------------------------------
+strlen_char_n:
+    xor rcx, rcx
+    test rdi, rdi
+    jz .LOOP_DONE
+
+.LOOP_STRLEN_N:
+    movzx rax, byte [rdi]
+    test rax, rax
+    jz .LOOP_DONE
+
+    inc rcx
+    cmp al, sil
+    jne .NOT_C
+    
+    dec rdx
+    jz .LOOP_DONE
+
+.NOT_C:
+    inc rdi
+    jmp .LOOP_STRLEN_N
+
+.LOOP_DONE:
+    mov rax, rcx
+    ret
+
+
+
+
+
 ; ----------------------------------------
 ; char *strncpy(char *dest, const char *src, size_t n)
 ;
@@ -75,27 +126,102 @@ strlen_char:
 ;   rax - char *dest
 ; ----------------------------------------
 strncpy:
-    push rdi            ; Sauvegarde l'adresse de dest pour le retour
-    xor rcx, rcx        ; rcx = 0 (compteur)
+    push rdi
+    xor rcx, rcx
     jmp .LOOP_STRNCPY
+
 .LOOP_STRNCPY:
-    cmp rcx, rdx        ; Compare rcx avec n
-    jge .LOOP_DONE      ; Si rcx >= n, on a fini
-    movzx rax, byte [rsi] ; Charge le caractère source
-    mov byte [rdi], al  ; Copie le caractère dans dest
-    test rax, rax       ; Vérifie si c'est le caractère nul
-    jz .PAD_ZEROS       ; Si oui, on doit remplir le reste avec des zéros
-    inc rcx             ; Incrémente le compteur
-    inc rdi             ; Passe au caractère suivant dans dest
-    inc rsi             ; Passe au caractère suivant dans src
-    jmp .LOOP_STRNCPY   ; Continue la boucle
+    cmp rcx, rdx
+    jge .LOOP_DONE
+    movzx rax, byte [rsi]
+    mov byte [rdi], al
+    test rax, rax
+    jz .PAD_ZEROS
+    inc rcx
+    inc rdi
+    inc rsi
+    jmp .LOOP_STRNCPY
+
 .PAD_ZEROS:
-    inc rcx             ; Incrémente le compteur
-    inc rdi             ; Passe au caractère suivant dans dest
-    cmp rcx, rdx        ; Compare rcx avec n
-    jge .LOOP_DONE      ; Si rcx >= n, on a fini
-    mov byte [rdi], 0   ; Remplit avec un zéro
-    jmp .PAD_ZEROS      ; Continue le remplissage
+    inc rcx
+    inc rdi
+    cmp rcx, rdx
+    jge .LOOP_DONE
+    mov byte [rdi], 0
+    jmp .PAD_ZEROS
+
 .LOOP_DONE:
-    pop rax             ; Restaure l'adresse de dest pour le retour
+    pop rax
+    ret
+
+
+
+
+
+; ----------------------------------------
+; int strcmp(const char *s1, const char *s2)
+;
+; Parameters:
+;   rdi - const char *s1
+;   rsi - const char *s2
+;
+; Returns:
+;   rax - int
+; ----------------------------------------
+strcmp:
+    push rbx
+    jmp .LOOP_STRCMP
+
+.LOOP_STRCMP:
+    movzx rax, byte [rdi]
+    movzx rbx, byte [rsi]
+    cmp rax, rbx
+    jne .LOOP_DONE
+    test rax, rax
+    jz .LOOP_DONE
+    inc rsi
+    inc rdi
+    jmp .LOOP_STRCMP
+
+.LOOP_DONE:
+    sub rax, rbx
+    pop rbx
+    ret
+
+
+
+
+
+; ----------------------------------------
+; int strncmp(const char *s1, const char *s2, size_t n)
+;
+; Parameters:
+;   rdi - const char *s1
+;   rsi - const char *s2
+;   rdx - size_t n
+;
+; Returns:
+;   rax - int
+; ----------------------------------------
+strncmp:
+    push rbx
+    jmp .LOOP_STRNCMP
+
+.LOOP_STRNCMP:
+    test rdx, rdx
+    jz .LOOP_DONE
+    movzx rax, byte [rdi]
+    movzx rbx, byte [rsi]
+    cmp rax, rbx
+    jne .LOOP_DONE
+    test rax, rax
+    jz .LOOP_DONE
+    inc rsi
+    inc rdi
+    dec rdx
+    jmp .LOOP_STRNCMP
+
+.LOOP_DONE:
+    sub rax, rbx
+    pop rbx
     ret

@@ -1,10 +1,39 @@
 ; Print utils for Assembly LS
 %include "include/ls.inc"
 
+    extern strlen_char
+
 ; ------------------- TEXT -------------------
 section .text
 
     global put_nmbr
+    global print_debug
+
+; ----------------------------------------
+; void print_debug(char *string)
+;
+; Parameters:
+;   rdi - char *string
+;
+; ----------------------------------------
+print_debug:
+    push r8
+    lea r8, [rdi]
+    mov rdi, rdi
+    mov rsi, 10
+    call strlen_char
+
+    mov rdx, rax
+    mov rax, SYS_WRITE
+    lea rsi, [r8]
+    mov rdi, STDOUT
+    syscall
+    pop r8
+    ret
+
+
+
+
 
 ; ----------------------------------------
 ; void put_nmbr(int number)
