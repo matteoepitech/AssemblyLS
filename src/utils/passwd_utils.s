@@ -36,6 +36,11 @@ get_uid_name:
     push r8
     push r9
     push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
 
     mov r15, rdi		; The UID
     mov rax, SYS_OPEN
@@ -45,10 +50,10 @@ get_uid_name:
     syscall
     test rax, rax
     js QUIT_PROGRAM_FAIL
-    mov rcx, rax
+    mov r12, rax
 
 .FIND_THE_LINE_UID_OWNER:
-    mov rdi, rcx
+    mov rdi, r12
     call get_line
     lea r10, [rax]
     
@@ -73,8 +78,7 @@ get_uid_name:
     mov byte [r9 + rax], 0		; R9 is currently the buffer string
     lea rdi, [r9]
     call get_nmbr
-    mov rdi, rax
-    call put_nmbr
+
     cmp rax, r15
     je .DONE_UID
     jmp .FIND_THE_LINE_UID_OWNER
@@ -93,6 +97,11 @@ get_uid_name:
     mov rdi, rcx
     syscall
     mov rax, r9
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
     pop r10
     pop r9
     pop r8

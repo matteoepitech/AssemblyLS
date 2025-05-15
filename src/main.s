@@ -346,8 +346,6 @@ print_dir_content:
 ; void print_file_informations(void)
 ; ----------------------------------------
 print_file_informations:
-    push rbp
-    mov rbp, rsp
     push rax
     push rdi
     push rsi
@@ -406,7 +404,9 @@ print_file_informations:
 
 .PRINT_UID_OWNER:
     mov edi, [stat_buffer + ST_UID]
-    call put_nmbr
+    call get_uid_name
+    mov rdi, rax
+    call print_debug
 
     mov rax, SYS_WRITE
     mov rdi, STDOUT
@@ -439,7 +439,6 @@ print_file_informations:
     pop rsi
     pop rdi
     pop rax
-    leave
     ret
 
 

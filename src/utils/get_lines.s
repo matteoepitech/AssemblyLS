@@ -49,7 +49,7 @@ get_line:
     push r10
     push r11
 
-    cmp rdi, [saved_fd]
+    cmp edi, [saved_fd]
     jne .change_fd
     jmp .continue
 
@@ -59,8 +59,8 @@ get_line:
     mov dword [buffer_size_get_line], 0
 
 .continue:
-    mov eax, dword [stream_index_get_line]
-    cmp eax, dword [buffer_size_get_line]
+    mov eax, [stream_index_get_line]
+    cmp eax, [buffer_size_get_line]
     jl .process_line
 
     mov rax, SYS_READ
@@ -72,7 +72,7 @@ get_line:
     test eax, eax
     jz .eof
 
-    mov dword [buffer_size_get_line], 0
+    mov [buffer_size_get_line], eax
     mov dword [stream_index_get_line], 0
 
 .process_line:
@@ -91,10 +91,9 @@ get_line:
     lea rsi, [buffer_get_line + r11d]
     mov rdx, r8
     call strncpy
-    
-    add dword [stream_index_get_line], r8d
 
-    lea rax, [line_get_line]
+    inc r8d
+    add [stream_index_get_line], r8d
     jmp .done
 
 .eof:
@@ -109,6 +108,7 @@ get_line:
     pop rdx
     pop rsi
     pop rbx
+    mov rax, line_get_line
     ret
 
 
