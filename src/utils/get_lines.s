@@ -2,6 +2,7 @@
 ; GetLine utils for Assembly LS
 %include "include/ls.inc"
 
+    extern print_debug
     extern put_nmbr
     extern strlen
     extern strlen_char
@@ -58,8 +59,8 @@ get_line:
     mov dword [buffer_size_get_line], 0
 
 .continue:
-    mov eax, [stream_index_get_line]
-    cmp eax, [buffer_size_get_line]
+    mov eax, dword [stream_index_get_line]
+    cmp eax, dword [buffer_size_get_line]
     jl .process_line
 
     mov rax, SYS_READ
@@ -68,10 +69,10 @@ get_line:
     mov rdx, 4096
     syscall
 
-    test rax, rax
-    jle .eof
+    test eax, eax
+    jz .eof
 
-    mov [buffer_size_get_line], eax
+    mov dword [buffer_size_get_line], 0
     mov dword [stream_index_get_line], 0
 
 .process_line:
@@ -90,10 +91,8 @@ get_line:
     lea rsi, [buffer_get_line + r11d]
     mov rdx, r8
     call strncpy
-
-    add r11d, r8d
-    inc r11d
-    mov [stream_index_get_line], r11d
+    
+    add dword [stream_index_get_line], r8d
 
     lea rax, [line_get_line]
     jmp .done
@@ -110,7 +109,6 @@ get_line:
     pop rdx
     pop rsi
     pop rbx
-    leave
     ret
 
 
@@ -125,9 +123,6 @@ get_line:
 ;
 ; ----------------------------------------
 reset_buffer:
-    push rbp
-    mov rbp, rsp
-
     xor rcx, rcx
     cmp rcx, rsi
     jge .RESET_BUFFER_DONE
