@@ -1,4 +1,4 @@
-NAME    := ls
+NAME    := asmls
 SRC     := $(wildcard src/*.s) $(wildcard src/utils/*.s)
 OBJ_DIR := obj
 OBJ     := $(SRC:src/%.s=$(OBJ_DIR)/%.o)

@@ -1,6 +1,7 @@
 ; Main file for the Assembly LS
 %include "include/ls.inc"
 
+    extern get_uid_name
     extern opendir
     extern readdir
     extern strlen
@@ -18,8 +19,12 @@ section .rodata
     current_path: db ".", 0x00
     new_line: db 0x0a, 0x00
     new_space: db 0x20, 0x20, 0x00
+    tab: db 0x09, 0x00
+    r_char: db 0x72
+    w_char: db 0x77
+    x_char: db 0x78
     semicolon: db 58
-    tmp_rights: db "---------", 0x00
+    dash_char: db 0x2d
 
     finished_read: db 0x0a, "LS just finished to read the directory.", 0x0a, 0x00
     finished_read_len equ $-finished_read - 1
@@ -42,6 +47,8 @@ section .bss
 section .text
 
     global _start
+    global QUIT_PROGRAM_FAIL
+    global QUIT_PROGRAM
 
 ; Entry point of the program
 _start:
@@ -376,11 +383,8 @@ print_file_informations:
     jmp .PRINT_RIGHTS
 
 .PRINT_RIGHTS:
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, tmp_rights
-    mov rdx, 9
-    syscall
+    mov edi, [stat_buffer + ST_MODE]
+    call print_rights
     jmp .PRINT_SPACE_AFTER_RIGHTS
 
 .PRINT_SPACE_AFTER_RIGHTS:
@@ -401,51 +405,220 @@ print_file_informations:
     syscall
 
 .PRINT_UID_OWNER:
-    mov r15, 0			; The UID
-    mov rax, SYS_OPEN
-    mov rdi, etc_passwd_path
-    mov rsi, 0
-    mov rdx, 0
+    mov edi, [stat_buffer + ST_UID]
+    call put_nmbr
+
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, new_space
+    mov rdx, 1
     syscall
-    test rax, rax
-    js QUIT_PROGRAM_FAIL
-    mov rcx, rax
 
-.FIND_THE_LINE_UID_OWNER:
-    push rcx
-    push r8
-    push r9
-    mov rdi, rcx
-    call get_line
+.PRINT_GID_OWNER:
+    mov edi, [stat_buffer + ST_GID]
+    call put_nmbr
 
-    mov rdi, rax
-    mov r8, rdi
-    mov al, byte [semicolon]
-    movzx rsi, al
-    mov rdx, 2
-    call strlen_char_n
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, new_space
+    mov rdx, 1
+    syscall
 
-    lea r9, [r8 + rax]
-    lea rdi, [r9]
-    mov al, byte [semicolon]
-    movzx rsi, al
-    call strlen_char
+.PRINT_SIZE:
+    mov edi, [stat_buffer + ST_SIZE]
+    call put_nmbr
 
-    mov byte [r9 + rax], 0		; R9 is currently the buffer string
-    ; TODO Create getnbr(char *string) and compare them if they are correct then we got the UID name
-
-.FIND_THE_LINE_GID_OWNER:
-    pop r9
-    pop r8
-    pop rcx
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, tab
+    mov rdx, 1
+    syscall
 
 .PRINT_FILE_INFORMATIONS_DONE:
-    mov rax, 3
-    mov rdi, rcx
-    syscall
     pop rdx
     pop rsi
     pop rdi
     pop rax
     leave
     ret
+
+
+
+
+
+; ----------------------------------------
+; int print_rights(mode_t mode)
+;
+; Parameters:
+;   rdi - mode_t mode
+;
+; ----------------------------------------
+print_rights:
+    push r8
+    lea r8, [rdi]
+    jmp .PRINT_USR_R
+
+.PRINT_USR_R_DASH:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, dash_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_USR_W
+
+.PRINT_USR_R:
+    test r8, S_IRUSR
+    jz .PRINT_USR_R_DASH
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, r_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_USR_W
+
+.PRINT_USR_W_DASH:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, dash_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_USR_X
+
+.PRINT_USR_W:
+    test r8, S_IWUSR
+    jz .PRINT_USR_W_DASH
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, w_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_USR_X
+
+.PRINT_USR_X_DASH:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, dash_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_GRP_R
+
+.PRINT_USR_X:
+    test r8, S_IXUSR
+    jz .PRINT_USR_X_DASH
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, x_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_GRP_R
+
+.PRINT_GRP_R_DASH:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, dash_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_GRP_W
+
+.PRINT_GRP_R:
+    test r8, S_IRGRP
+    jz .PRINT_GRP_R_DASH
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, r_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_GRP_W
+
+.PRINT_GRP_W_DASH:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, dash_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_GRP_X
+
+.PRINT_GRP_W:
+    test r8, S_IWGRP
+    jz .PRINT_GRP_W_DASH
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, w_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_GRP_X
+
+.PRINT_GRP_X_DASH:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, dash_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_OTH_R
+
+.PRINT_GRP_X:
+    test r8, S_IXGRP
+    jz .PRINT_GRP_X_DASH
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, x_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_OTH_R
+
+.PRINT_OTH_R_DASH:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, dash_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_OTH_W
+
+.PRINT_OTH_R:
+    test r8, S_IROTH
+    jz .PRINT_OTH_R_DASH
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, r_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_OTH_W
+
+.PRINT_OTH_W_DASH:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, dash_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_OTH_X
+
+.PRINT_OTH_W:
+    test r8, S_IWOTH
+    jz .PRINT_OTH_W_DASH
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, w_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_OTH_X
+
+.PRINT_OTH_X_DASH:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, dash_char
+    mov rdx, 1
+    syscall
+    jmp .PRINT_RIGHTS_DONE
+
+.PRINT_OTH_X:
+    test r8, S_IXUSR
+    jz .PRINT_OTH_X_DASH
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, x_char
+    mov rdx, 1
+    syscall
+
+.PRINT_RIGHTS_DONE:
+    pop r8
+    ret    

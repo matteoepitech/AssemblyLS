@@ -34,10 +34,23 @@
 %define ST_NLINK (ST_INO + 8)
 %define ST_MODE (ST_NLINK + 8)
 %define ST_UID (ST_MODE + 4)
+%define ST_GID (ST_UID + 4)
+%define ST_SIZE 48
 
 %define S_IFREG 0100000o
 %define S_IFDIR 0040000o
 %define S_IFMT  0170000o
+%define S_IRUSR	00400o
+%define S_IWUSR	00200o
+%define S_IXUSR	00100o
+%define S_IRWXG	00070o
+%define S_IRGRP	00040o
+%define S_IWGRP	00020o
+%define S_IXGRP	00010o
+%define S_IRWXO	00007o
+%define S_IROTH	00004o
+%define S_IWOTH	00002o
+%define S_IXOTH	00001o
 
 %define ASCII_DOT 46
 %define ASCII_DASH 45

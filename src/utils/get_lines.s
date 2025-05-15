@@ -20,6 +20,8 @@ section .bss
 section .data
     saved_fd: dd 0
     stream_index_get_line: dd 0
+    buffer_size_get_line: dd 0
+    bytes_in_buffer: dd 0
 
 ; ------------------- TEXT -------------------
 section .text
@@ -37,10 +39,7 @@ section .text
 ;
 ; ----------------------------------------
 get_line:
-    push rbp
-    mov rbp, rsp
     push rbx
-    push rdi
     push rsi
     push rdx
     push rcx
@@ -50,34 +49,36 @@ get_line:
     push r11
 
     cmp rdi, [saved_fd]
-    jne .MODIFY_FD
-    jmp .CONTINUE_GET_LINE
+    jne .change_fd
+    jmp .continue
 
-.MODIFY_FD:
-    mov [saved_fd], rdi
+.change_fd:
+    mov [saved_fd], edi
+    mov dword [stream_index_get_line], 0
+    mov dword [buffer_size_get_line], 0
 
-.CONTINUE_GET_LINE:
-    xor rax, rax
-    xor rbx, rbx
-    xor rdx, rdx
-    xor rsi, rsi
-    xor rcx, rcx
-    xor r8, r8
-    xor r9, r9
-    xor r10, r10
-    xor r11, r11
+.continue:
+    mov eax, [stream_index_get_line]
+    cmp eax, [buffer_size_get_line]
+    jl .process_line
+
     mov rax, SYS_READ
+    mov rdi, [saved_fd]
     mov rsi, buffer_get_line
     mov rdx, 4096
     syscall
 
+    test rax, rax
+    jle .eof
+
+    mov [buffer_size_get_line], eax
+    mov dword [stream_index_get_line], 0
+
+.process_line:
     xor r11, r11
     mov r11d, [stream_index_get_line]
-    cmp r11, 4096
-    jge .GET_LINES_DONES
-
-    lea rdi, [buffer_get_line + r11]
-    movzx rsi, byte [newline]
+    lea rdi, [buffer_get_line + r11d]
+    mov rsi, 10
     call strlen_char
     mov r8, rax
 
@@ -86,14 +87,21 @@ get_line:
     call reset_buffer
 
     lea rdi, [line_get_line]
-    lea rsi, [buffer_get_line + r11]
+    lea rsi, [buffer_get_line + r11d]
     mov rdx, r8
-    call strncpy			; Result of the get_line into rax
+    call strncpy
 
-    add [stream_index_get_line], rax
-    add dword [stream_index_get_line], 1
+    add r11d, r8d
+    inc r11d
+    mov [stream_index_get_line], r11d
 
-.GET_LINES_DONES:
+    lea rax, [line_get_line]
+    jmp .done
+
+.eof:
+    xor rax, rax
+
+.done:
     pop r11
     pop r10
     pop r9
@@ -101,11 +109,9 @@ get_line:
     pop rcx
     pop rdx
     pop rsi
-    pop rdi
     pop rbx
     leave
     ret
-
 
 
 
@@ -135,5 +141,4 @@ reset_buffer:
     jmp .RESET_BUFFER_CYCLE
 
 .RESET_BUFFER_DONE:
-    leave
     ret

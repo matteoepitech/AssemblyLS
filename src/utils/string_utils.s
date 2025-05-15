@@ -4,6 +4,7 @@
 ; ------------------- TEXT -------------------
 section .text
 
+    global get_nmbr
     global strlen
     global strlen_char
     global strlen_char_n
@@ -224,4 +225,52 @@ strncmp:
 .LOOP_DONE:
     sub rax, rbx
     pop rbx
+    ret
+
+
+
+
+
+; ----------------------------------------
+; int get_nmbr(const char *string)
+;
+; Parameters:
+;   rdi - const char *string
+;
+; Returns:
+;   rax - int
+; ----------------------------------------
+get_nmbr:
+    push rcx
+    push rdx
+    push rsi
+    xor rax, rax
+
+.GET_ONE_DIGIT:
+    xor rdx, rdx
+    mov dl, byte [rdi]
+    test dl, dl
+    jz .END_DIVISE
+    cmp dl, 48
+    jl .NOT_NUMBER
+    cmp dl, 57
+    jg .NOT_NUMBER
+    sub dl, 48
+    add rax, rdx
+    inc rdi
+    mov rsi, 10
+    mul rsi
+    jmp .GET_ONE_DIGIT
+
+.NOT_NUMBER:
+    xor rax, rax
+    jmp .FINISHED_GET_NMBR
+
+.END_DIVISE:
+    div rsi
+
+.FINISHED_GET_NMBR:
+    pop rsi
+    pop rdx
+    pop rcx
     ret

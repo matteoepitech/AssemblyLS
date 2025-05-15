@@ -46,8 +46,6 @@ put_nmbr:
     push rbp
     mov rbp, rsp
 
-    push rax
-    push rdi
     push rsi
     push rdx
 
@@ -91,10 +89,8 @@ put_nmbr:
     jmp .PRINT_DIGIT
 
 .PRINT_DONE:
-    pop rax
     pop rdx
     pop rsi
-    pop rdi
     pop rax
     leave
     ret
