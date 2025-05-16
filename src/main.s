@@ -1,6 +1,7 @@
 ; Main file for the Assembly LS
 %include "include/ls.inc"
 
+    extern get_gid_name
     extern get_uid_name
     extern opendir
     extern readdir
@@ -61,10 +62,6 @@ _start:
     lea rsi, [rbp + 16]		; ARGV
     ; Calling the parse options function
     call parse_options
-
-    ;mov rcx, rax
-    ;mov rdi, rcx
-    ;call get_line
 
     ; Calling the read to the current directory
     call read_current_dir
@@ -416,7 +413,9 @@ print_file_informations:
 
 .PRINT_GID_OWNER:
     mov edi, [stat_buffer + ST_GID]
-    call put_nmbr
+    call get_gid_name
+    mov rdi, rax
+    call print_debug
 
     mov rax, SYS_WRITE
     mov rdi, STDOUT
@@ -430,7 +429,7 @@ print_file_informations:
 
     mov rax, SYS_WRITE
     mov rdi, STDOUT
-    mov rsi, tab
+    mov rsi, new_space
     mov rdx, 1
     syscall
 

@@ -1,4 +1,5 @@
 ls
+asmls
 
 *.o
 tmp/demo.cast
