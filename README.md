@@ -27,7 +27,8 @@ make re     # rebuild from scratch
 - [x] Simple LS in lambda directory
 - [x] Simple LS in big directory
 - [x] -a option
-- [ ] -l option
+- [x] -l option
+- [ ] Providing path
 
 > [!WARNING]
 > This project contains a lot of bad practice since it's a beginner friendly project.
