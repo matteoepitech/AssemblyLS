@@ -32,9 +32,3 @@ make re     # rebuild from scratch
 
 > [!WARNING]
 > This project contains a lot of bad practice since it's a beginner friendly project.
-
----
-
-## 📄 License
-
-MIT — use freely, this can segfault btw 😉
